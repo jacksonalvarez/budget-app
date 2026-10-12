@@ -16,11 +16,22 @@ export default function TransactionList({ transactions, onDeleteTransaction }: T
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateString);
+    const date = match
+      ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+      : new Date(dateString);
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const sourceLabel = (source?: Transaction['source'], pending?: boolean) => {
+    const name = source === 'plaid' ? 'Plaid' : source === 'import' ? 'Imported' : '';
+    if (pending && name) return `${name} · Pending`;
+    if (pending) return 'Pending';
+    return name;
   };
 
   if (transactions.length === 0) {
@@ -119,7 +130,7 @@ export default function TransactionList({ transactions, onDeleteTransaction }: T
                   className="text-sm"
                   style={{ color: theme.colors.textMuted }}
                 >
-                  {formatDate(transaction.date)}
+                  {[formatDate(transaction.date), sourceLabel(transaction.source, transaction.pending)].filter(Boolean).join(' · ')}
                 </span>
               </div>
             </div>

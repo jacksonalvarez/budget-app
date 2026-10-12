@@ -104,6 +104,43 @@ Visit `http://localhost:3000` and you'll be redirected to the sign-in page.
 persistent data 🎨 **Simple Themes**: Light and Dark modes 🔒 **Private Data**:
 Each user's data is isolated 📱 **Responsive**: Works on desktop and mobile
 
+## Optional integrations
+
+Both of these stay off until the environment variables are set. The rest of the app works without them.
+
+### Document import
+
+Photos and scanned PDFs are read with Mistral OCR (or Gemini, if you point `OCR_PROVIDER` at it). A PDF that already contains text skips image OCR and only sends that text to be structured.
+
+```env
+OCR_PROVIDER=mistral
+MISTRAL_API_KEY=<your-mistral-key>
+# OCR_MODEL=mistral-ocr-latest
+# OCR_STRUCTURE_MODEL=mistral-small-latest
+
+# Alternative:
+# OCR_PROVIDER=gemini
+# GEMINI_API_KEY=<your-gemini-key>
+```
+
+Set `OCR_ENABLED=false` to hide the reader even if a key is present. Uploads are limited to 4 MB. Review the rows before they are saved.
+
+### Plaid
+
+Plaid is a separate integration. A new US or Canada team can use Plaid's free Trial plan (up to 10 real items) from the Plaid dashboard. Use `sandbox` until that trial is approved.
+
+```env
+PLAID_CLIENT_ID=<your-plaid-client-id>
+PLAID_SECRET=<your-plaid-secret>
+PLAID_ENV=sandbox
+# PLAID_PRODUCTS=transactions
+# PLAID_COUNTRY_CODES=US
+# PLAID_REDIRECT_URI=https://budgeting.jackson-alvarez.dev/plaid-oauth
+# PLAID_WEBHOOK_URL=https://budgeting.jackson-alvarez.dev/api/integrations/plaid/webhook
+```
+
+Bank access tokens are encrypted with `NEXTAUTH_SECRET` (or `INTEGRATION_SECRET` if you set one) and stored apart from the budget file the browser can edit. Set `PLAID_ENABLED=false` to turn the integration off without deleting the keys. Disconnecting a bank leaves transactions that were already imported.
+
 ## Troubleshooting
 
 ### "Unauthorized" Error

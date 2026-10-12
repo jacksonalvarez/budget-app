@@ -1,3 +1,5 @@
+export type TransactionSource = 'manual' | 'plaid' | 'import';
+
 export interface Transaction {
   id: string;
   description: string;
@@ -5,6 +7,10 @@ export interface Transaction {
   type: 'income' | 'expense';
   date: string;
   category?: string;
+  source?: TransactionSource;
+  externalId?: string;
+  pending?: boolean;
+  accountName?: string;
 }
 
 export interface IncomeSource {
