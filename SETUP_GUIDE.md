@@ -104,42 +104,118 @@ Visit `http://localhost:3000` and you'll be redirected to the sign-in page.
 persistent data 🎨 **Simple Themes**: Light and Dark modes 🔒 **Private Data**:
 Each user's data is isolated 📱 **Responsive**: Works on desktop and mobile
 
-## Optional integrations
+## Get the new keys
 
-Both of these stay off until the environment variables are set. The rest of the app works without them.
+You need two accounts. They are not the same company, and neither one is AWS.
 
-### Document import
+| What you want | Company | What you paste in |
+| --- | --- | --- |
+| Read a photo or scan of a statement | [Mistral](https://console.mistral.ai/) | `MISTRAL_API_KEY` |
+| Pull transactions from a bank | [Plaid](https://dashboard.plaid.com/) | `PLAID_CLIENT_ID` and `PLAID_SECRET` |
 
-Photos and scanned PDFs are read with Mistral OCR (or Gemini, if you point `OCR_PROVIDER` at it). A PDF that already contains text skips image OCR and only sends that text to be structured.
+Mistral is an AI company. Their OCR product is the replacement for AWS Textract tables. It reads the page. It does not connect to your bank.
+
+Plaid is the bank connection. It does not read photos.
+
+The Import tab on the live site does not exist until the branch with this feature is deployed. Putting keys in Vercel before that deploy does nothing visible. After it is deployed, add the keys in the Vercel project for this app (Settings, Environment Variables, Production), then redeploy. A local `.env.local` only affects `npm run dev` on your machine.
+
+Do not commit either file. `.env.local` is already gitignored.
+
+### 1. Mistral key (document reader)
+
+1. Open [console.mistral.ai](https://console.mistral.ai/) and create an account.
+2. In the left sidebar, open **API Keys**. The same page is linked from the docs as [Studio API keys](https://docs.mistral.ai/getting-started/quickstarts/studio/activate-and-generate-api-key).
+3. Click **Create new key**. Name it `budget-app`. Copy the key when it is shown. Mistral will not show it again.
+4. Put this in Vercel, or in `.env.local` for local dev:
 
 ```env
 OCR_PROVIDER=mistral
-MISTRAL_API_KEY=<your-mistral-key>
-# OCR_MODEL=mistral-ocr-latest
-# OCR_STRUCTURE_MODEL=mistral-small-latest
-
-# Alternative:
-# OCR_PROVIDER=gemini
-# GEMINI_API_KEY=<your-gemini-key>
+MISTRAL_API_KEY=paste-the-key-here
 ```
 
-Set `OCR_ENABLED=false` to hide the reader even if a key is present. Uploads are limited to 4 MB. Review the rows before they are saved.
+Leave `OCR_MODEL` unset. The app uses `mistral-ocr-latest` for scans and `mistral-small-latest` to turn extracted text into transaction rows.
 
-### Plaid
+Mistral's API can be used without a card at first, with low limits. OCR itself is billed per page (about $4 per 1,000 pages for the OCR call, about $5 per 1,000 when it also returns structured fields). A few statements cost cents. If an upload fails with a billing or quota error, add a payment method in the Mistral console and try again.
 
-Plaid is a separate integration. A new US or Canada team can use Plaid's free Trial plan (up to 10 real items) from the Plaid dashboard. Use `sandbox` until that trial is approved.
+You do not want the "Vibe" or "Mistral Code" key types. You want a normal Studio API key.
+
+**Check that the key works** before blaming the app. In a terminal:
+
+```bash
+curl https://api.mistral.ai/v1/models \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+A JSON list of models means the key is good. `401` means the key is wrong or incomplete.
+
+**Gemini instead.** Only do this if you already want Google's model. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey), create a key, and set:
 
 ```env
-PLAID_CLIENT_ID=<your-plaid-client-id>
-PLAID_SECRET=<your-plaid-secret>
-PLAID_ENV=sandbox
-# PLAID_PRODUCTS=transactions
-# PLAID_COUNTRY_CODES=US
-# PLAID_REDIRECT_URI=https://budgeting.jackson-alvarez.dev/plaid-oauth
-# PLAID_WEBHOOK_URL=https://budgeting.jackson-alvarez.dev/api/integrations/plaid/webhook
+OCR_PROVIDER=gemini
+GEMINI_API_KEY=paste-the-key-here
 ```
 
-Bank access tokens are encrypted with `NEXTAUTH_SECRET` (or `INTEGRATION_SECRET` if you set one) and stored apart from the budget file the browser can edit. Set `PLAID_ENABLED=false` to turn the integration off without deleting the keys. Disconnecting a bank leaves transactions that were already imported.
+Do not set both providers and hope. `OCR_PROVIDER` picks one. If you leave `OCR_PROVIDER` empty, a Mistral key wins over a Gemini key.
+
+### 2. Plaid keys (bank connection)
+
+1. Sign up at [dashboard.plaid.com/signup](https://dashboard.plaid.com/signup).
+2. Open **Team Settings**, then **Keys** (sometimes labeled **Developers → Keys**).
+3. Copy the **client ID**. That value is shared. The **secret** is not. There is a different secret for Sandbox and for Production. The secret has to match `PLAID_ENV`.
+
+Start with Sandbox. It is free, instant, and uses fake banks.
+
+```env
+PLAID_CLIENT_ID=paste-client-id
+PLAID_SECRET=paste-the-sandbox-secret
+PLAID_ENV=sandbox
+```
+
+In the app, Import → Connect a bank. Search for **First Platypus Bank**. When it asks for a username and password, use `user_good` and `pass_good`. That is Plaid's test account, not your bank.
+
+**Real accounts.** Sandbox will never see your bank. For your own accounts, US and Canada:
+
+1. Open [dashboard.plaid.com/trial-plan](https://dashboard.plaid.com/trial-plan) and start the Trial plan. New teams created on or after April 15, 2026 can get this. It is free for up to 10 real connections. Deleting a connection does not give the slot back.
+2. In Keys, copy the **Production** secret, not the Sandbox secret.
+3. Change the env to:
+
+```env
+PLAID_ENV=production
+PLAID_SECRET=paste-the-production-secret
+PLAID_REDIRECT_URI=https://budgeting.jackson-alvarez.dev/plaid-oauth
+PLAID_WEBHOOK_URL=https://budgeting.jackson-alvarez.dev/api/integrations/plaid/webhook
+```
+
+4. In the Plaid dashboard, add `https://budgeting.jackson-alvarez.dev/plaid-oauth` as an **allowed redirect URI**. It has to match `PLAID_REDIRECT_URI` exactly, including `https`.
+5. Redeploy.
+
+If Link opens and then your bank bounces back to a Plaid error about the redirect URI, the dashboard allowlist and `PLAID_REDIRECT_URI` do not match.
+
+`NEXTAUTH_SECRET` must already be set (it is, if Google sign-in works). The app uses it to encrypt the bank token. Do not rotate that secret after you connect a bank unless you are ready to disconnect and connect again.
+
+### 3. Where the values go
+
+Production, for the site you already have:
+
+1. Vercel → this project → **Settings** → **Environment Variables**.
+2. Add each name and value for the **Production** environment.
+3. Deploy again. Vercel does not pick up new variables until the next deployment.
+
+Local:
+
+```env
+OCR_PROVIDER=mistral
+MISTRAL_API_KEY=
+PLAID_CLIENT_ID=
+PLAID_SECRET=
+PLAID_ENV=sandbox
+```
+
+Restart `npm run dev` after saving `.env.local`.
+
+Open Import. The pills should say **Mistral OCR** and **Plaid sandbox** (or **Plaid production**). If a pill says **Not configured**, the names above are missing, blank, or on the wrong Vercel environment.
+
+`OCR_ENABLED=false` or `PLAID_ENABLED=false` forces that pill off even when the key is present.
 
 ## Troubleshooting
 
