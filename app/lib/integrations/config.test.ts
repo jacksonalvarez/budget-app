@@ -19,6 +19,19 @@ describe("integration config", () => {
     assert.equal(ocrCredentials({ MISTRAL_API_KEY: " test-key " })?.apiKey, "test-key");
   });
 
+  it("uses production when PLAID_ENV is omitted", () => {
+    const config = resolveIntegrationConfig({
+      PLAID_CLIENT_ID: "id",
+      PLAID_SECRET: "secret",
+    });
+    assert.equal(config.plaid.configured, true);
+    assert.equal(config.plaid.environment, "production");
+    assert.equal(plaidCredentials({
+      PLAID_CLIENT_ID: "id",
+      PLAID_SECRET: "secret",
+    })?.environment, "production");
+  });
+
   it("does not enable Plaid for a typo in the environment", () => {
     const config = resolveIntegrationConfig({
       PLAID_CLIENT_ID: "id",

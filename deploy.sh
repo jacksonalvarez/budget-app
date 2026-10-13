@@ -45,7 +45,7 @@ MISTRAL_API_KEY=
 GEMINI_API_KEY=
 PLAID_CLIENT_ID=
 PLAID_SECRET=
-PLAID_ENV=sandbox
+PLAID_ENV=production
 EOF
 
 echo "❗ IMPORTANT: Edit .env.local with your actual credentials!"

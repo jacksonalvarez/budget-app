@@ -285,7 +285,7 @@ export default function ImportTab({ categories, transactions, onImport, onLedger
             lines={[
               'PLAID_CLIENT_ID=...',
               'PLAID_SECRET=...',
-              'PLAID_ENV=sandbox',
+              'PLAID_ENV=production',
               '# optional: PLAID_WEBHOOK_URL, PLAID_REDIRECT_URI, PLAID_PRODUCTS',
             ]}
           />

@@ -160,34 +160,24 @@ Do not set both providers and hope. `OCR_PROVIDER` picks one. If you leave `OCR_
 ### 2. Plaid keys (bank connection)
 
 1. Sign up at [dashboard.plaid.com/signup](https://dashboard.plaid.com/signup).
-2. Open **Team Settings**, then **Keys** (sometimes labeled **Developers → Keys**).
-3. Copy the **client ID**. That value is shared. The **secret** is not. There is a different secret for Sandbox and for Production. The secret has to match `PLAID_ENV`.
-
-Start with Sandbox. It is free, instant, and uses fake banks.
+2. Open [dashboard.plaid.com/trial-plan](https://dashboard.plaid.com/trial-plan) and start the Trial plan. That plan talks to real banks, so it uses Plaid **Production**, not Sandbox.
+3. Open **Team Settings**, then **Keys**. Copy the **client ID** and the **Production** secret. Do not copy the Sandbox secret. The secret has to match the environment, and the app now defaults to production when `PLAID_ENV` is missing.
 
 ```env
 PLAID_CLIENT_ID=paste-client-id
-PLAID_SECRET=paste-the-sandbox-secret
-PLAID_ENV=sandbox
-```
-
-In the app, Import → Connect a bank. Search for **First Platypus Bank**. When it asks for a username and password, use `user_good` and `pass_good`. That is Plaid's test account, not your bank.
-
-**Real accounts.** Sandbox will never see your bank. For your own accounts, US and Canada:
-
-1. Open [dashboard.plaid.com/trial-plan](https://dashboard.plaid.com/trial-plan) and start the Trial plan. New teams created on or after April 15, 2026 can get this. It is free for up to 10 real connections. Deleting a connection does not give the slot back.
-2. In Keys, copy the **Production** secret, not the Sandbox secret.
-3. Change the env to:
-
-```env
-PLAID_ENV=production
 PLAID_SECRET=paste-the-production-secret
+PLAID_ENV=production
 PLAID_REDIRECT_URI=https://budgeting.jackson-alvarez.dev/plaid-oauth
 PLAID_WEBHOOK_URL=https://budgeting.jackson-alvarez.dev/api/integrations/plaid/webhook
 ```
 
-4. In the Plaid dashboard, add `https://budgeting.jackson-alvarez.dev/plaid-oauth` as an **allowed redirect URI**. It has to match `PLAID_REDIRECT_URI` exactly, including `https`.
-5. Redeploy.
+`PLAID_ENV=production` is the spelling. `prduction` or `prod` will leave Plaid unconfigured.
+
+In the Plaid dashboard, add `https://budgeting.jackson-alvarez.dev/plaid-oauth` as an **allowed redirect URI**. It has to match `PLAID_REDIRECT_URI` exactly, including `https`.
+
+The trial is free for up to 10 real connections. Deleting a connection does not give the slot back.
+
+Sandbox is only for a fake bank. Set `PLAID_ENV=sandbox` and use the Sandbox secret if you want that. Search **First Platypus Bank** and sign in with `user_good` / `pass_good`. Sandbox cannot see your real accounts.
 
 If Link opens and then your bank bounces back to a Plaid error about the redirect URI, the dashboard allowlist and `PLAID_REDIRECT_URI` do not match.
 
@@ -208,12 +198,12 @@ OCR_PROVIDER=mistral
 MISTRAL_API_KEY=
 PLAID_CLIENT_ID=
 PLAID_SECRET=
-PLAID_ENV=sandbox
+PLAID_ENV=production
 ```
 
 Restart `npm run dev` after saving `.env.local`.
 
-Open Import. The pills should say **Mistral OCR** and **Plaid sandbox** (or **Plaid production**). If a pill says **Not configured**, the names above are missing, blank, or on the wrong Vercel environment.
+Open Import. The pills should say **Mistral OCR** and **Plaid production**. If a pill says **Not configured**, the names above are missing, blank, or on the wrong Vercel environment. If you previously saved `PLAID_ENV=sandbox`, delete it or change it to `production` and redeploy.
 
 `OCR_ENABLED=false` or `PLAID_ENABLED=false` forces that pill off even when the key is present.
 

@@ -80,7 +80,7 @@ export function resolveIntegrationConfig(env: Env): IntegrationConfig {
   const plaidEnabled = enabledFlag(env.PLAID_ENABLED);
   const clientId = trimmed(env.PLAID_CLIENT_ID);
   const secret = trimmed(env.PLAID_SECRET);
-  const environmentRaw = trimmed(env.PLAID_ENV) || "sandbox";
+  const environmentRaw = trimmed(env.PLAID_ENV) || "production";
   const environment = PLAID_ENVIRONMENTS.has(environmentRaw as PlaidEnvironmentName)
     ? (environmentRaw as PlaidEnvironmentName)
     : null;
