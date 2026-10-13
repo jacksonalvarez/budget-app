@@ -21,7 +21,7 @@ sessions ✅ Protected routes requiring authentication
 6. For **Application type**, select "Web application"
 7. Add authorized redirect URIs:
    - `http://localhost:3000/api/auth/callback/google` (for development)
-   - `https://yourdomain.com/api/auth/callback/google` (for production)
+   - `https://finance.jackson-alvarez.dev/api/auth/callback/google` (for production)
 8. Copy your **Client ID** and **Client Secret**
 
 ### 2. AWS S3 Configuration
@@ -167,13 +167,15 @@ Do not set both providers and hope. `OCR_PROVIDER` picks one. If you leave `OCR_
 PLAID_CLIENT_ID=paste-client-id
 PLAID_SECRET=paste-the-production-secret
 PLAID_ENV=production
-PLAID_REDIRECT_URI=https://budgeting.jackson-alvarez.dev/plaid-oauth
-PLAID_WEBHOOK_URL=https://budgeting.jackson-alvarez.dev/api/integrations/plaid/webhook
+PLAID_REDIRECT_URI=https://finance.jackson-alvarez.dev/plaid-oauth
+PLAID_WEBHOOK_URL=https://finance.jackson-alvarez.dev/api/integrations/plaid/webhook
 ```
+
+The live site is `https://finance.jackson-alvarez.dev`.
 
 `PLAID_ENV=production` is the spelling. `prduction` or `prod` will leave Plaid unconfigured.
 
-In the Plaid dashboard, add `https://budgeting.jackson-alvarez.dev/plaid-oauth` as an **allowed redirect URI**. It has to match `PLAID_REDIRECT_URI` exactly, including `https`.
+In the Plaid dashboard, add `https://finance.jackson-alvarez.dev/plaid-oauth` as an **allowed redirect URI**. It has to match `PLAID_REDIRECT_URI` exactly, including `https`. Google’s production redirect is `https://finance.jackson-alvarez.dev/api/auth/callback/google`. `NEXTAUTH_URL` should be `https://finance.jackson-alvarez.dev`.
 
 The trial is free for up to 10 real connections. Deleting a connection does not give the slot back.
 

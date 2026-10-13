@@ -3,7 +3,7 @@
 
 APP_DIR="/var/www/budget-app"
 REPO_URL="https://github.com/yourusername/budget-app.git"  # Replace with your repo
-DOMAIN="budget.yourdomain.com"  # Replace with your subdomain
+DOMAIN="finance.jackson-alvarez.dev"
 
 echo "🚀 Deploying Budget App..."
 
