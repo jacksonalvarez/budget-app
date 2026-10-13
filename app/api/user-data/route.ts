@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '../../lib/auth-options';
 import { saveUserDataToS3, loadUserDataFromS3, initializeUserData } from '../../lib/s3-storage';
 
 export async function GET() {

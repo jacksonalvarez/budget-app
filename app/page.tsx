@@ -14,6 +14,7 @@ import { useTheme } from './theme/ThemeContext';
 import { Transaction, IncomeSource, RecurringExpense, SavingsGoal, Category } from './types';
 import { useUserData } from './hooks/useUserData';
 import CategoryManager from './components/CategoryManager';
+import ImportTab from './components/ImportTab';
 
 export default function Home() {
   const { theme } = useTheme();
@@ -27,6 +28,11 @@ export default function Home() {
       router.push('/auth/signin');
     }
   }, [status, router]);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab) setActiveTab(tab);
+  }, []);
 
   const { userData, isLoading, error, updateTransactions, updateIncomeSources, updateRecurringExpenses, updateSavingsGoals, addCategory, updateCategory, deleteCategory, refreshData } = useUserData();
 
@@ -84,6 +90,16 @@ export default function Home() {
 
   const deleteTransaction = (id: string) => {
     const newList = transactions.filter(transaction => transaction.id !== id);
+    setTransactions(newList);
+    updateTransactions(newList).catch(err => console.error(err));
+  };
+
+  const addTransactions = (items: Omit<Transaction, 'id'>[]) => {
+    const stamped = items.map((transaction, index) => ({
+      ...transaction,
+      id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+    }));
+    const newList = [...stamped, ...transactions];
     setTransactions(newList);
     updateTransactions(newList).catch(err => console.error(err));
   };
@@ -253,6 +269,15 @@ export default function Home() {
             onUpdateSavingsGoal={updateSavingsGoal}
             onDeleteSavingsGoal={deleteSavingsGoal}
             onAddTransaction={addTransaction}
+          />
+        );
+      case 'import':
+        return (
+          <ImportTab
+            categories={categories}
+            transactions={transactions}
+            onImport={addTransactions}
+            onLedgerRefresh={refreshData}
           />
         );
       default: // overview

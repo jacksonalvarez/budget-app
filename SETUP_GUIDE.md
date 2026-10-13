@@ -21,7 +21,7 @@ sessions ✅ Protected routes requiring authentication
 6. For **Application type**, select "Web application"
 7. Add authorized redirect URIs:
    - `http://localhost:3000/api/auth/callback/google` (for development)
-   - `https://yourdomain.com/api/auth/callback/google` (for production)
+   - `https://finance.jackson-alvarez.dev/api/auth/callback/google` (for production)
 8. Copy your **Client ID** and **Client Secret**
 
 ### 2. AWS S3 Configuration
@@ -103,6 +103,111 @@ Visit `http://localhost:3000` and you'll be redirected to the sign-in page.
 ✨ **Secure Authentication**: Google OAuth 2.0 🗄️ **Cloud Storage**: AWS S3 for
 persistent data 🎨 **Simple Themes**: Light and Dark modes 🔒 **Private Data**:
 Each user's data is isolated 📱 **Responsive**: Works on desktop and mobile
+
+## Get the new keys
+
+You need two accounts. They are not the same company, and neither one is AWS.
+
+| What you want | Company | What you paste in |
+| --- | --- | --- |
+| Read a photo or scan of a statement | [Mistral](https://console.mistral.ai/) | `MISTRAL_API_KEY` |
+| Pull transactions from a bank | [Plaid](https://dashboard.plaid.com/) | `PLAID_CLIENT_ID` and `PLAID_SECRET` |
+
+Mistral is an AI company. Their OCR product is the replacement for AWS Textract tables. It reads the page. It does not connect to your bank.
+
+Plaid is the bank connection. It does not read photos.
+
+The Import tab on the live site does not exist until the branch with this feature is deployed. Putting keys in Vercel before that deploy does nothing visible. After it is deployed, add the keys in the Vercel project for this app (Settings, Environment Variables, Production), then redeploy. A local `.env.local` only affects `npm run dev` on your machine.
+
+Do not commit either file. `.env.local` is already gitignored.
+
+### 1. Mistral key (document reader)
+
+1. Open [console.mistral.ai](https://console.mistral.ai/) and create an account.
+2. In the left sidebar, open **API Keys**. The same page is linked from the docs as [Studio API keys](https://docs.mistral.ai/getting-started/quickstarts/studio/activate-and-generate-api-key).
+3. Click **Create new key**. Name it `budget-app`. Copy the key when it is shown. Mistral will not show it again.
+4. Put this in Vercel, or in `.env.local` for local dev:
+
+```env
+OCR_PROVIDER=mistral
+MISTRAL_API_KEY=paste-the-key-here
+```
+
+Leave `OCR_MODEL` unset. The app uses `mistral-ocr-latest` for scans and `mistral-small-latest` to turn extracted text into transaction rows.
+
+Mistral's API can be used without a card at first, with low limits. OCR itself is billed per page (about $4 per 1,000 pages for the OCR call, about $5 per 1,000 when it also returns structured fields). A few statements cost cents. If an upload fails with a billing or quota error, add a payment method in the Mistral console and try again.
+
+You do not want the "Vibe" or "Mistral Code" key types. You want a normal Studio API key.
+
+**Check that the key works** before blaming the app. In a terminal:
+
+```bash
+curl https://api.mistral.ai/v1/models \
+  -H "Authorization: Bearer $MISTRAL_API_KEY"
+```
+
+A JSON list of models means the key is good. `401` means the key is wrong or incomplete.
+
+**Gemini instead.** Only do this if you already want Google's model. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey), create a key, and set:
+
+```env
+OCR_PROVIDER=gemini
+GEMINI_API_KEY=paste-the-key-here
+```
+
+Do not set both providers and hope. `OCR_PROVIDER` picks one. If you leave `OCR_PROVIDER` empty, a Mistral key wins over a Gemini key.
+
+### 2. Plaid keys (bank connection)
+
+1. Sign up at [dashboard.plaid.com/signup](https://dashboard.plaid.com/signup).
+2. Open [dashboard.plaid.com/trial-plan](https://dashboard.plaid.com/trial-plan) and start the Trial plan. That plan talks to real banks, so it uses Plaid **Production**, not Sandbox.
+3. Open **Team Settings**, then **Keys**. Copy the **client ID** and the **Production** secret. Do not copy the Sandbox secret. The secret has to match the environment, and the app now defaults to production when `PLAID_ENV` is missing.
+
+```env
+PLAID_CLIENT_ID=paste-client-id
+PLAID_SECRET=paste-the-production-secret
+PLAID_ENV=production
+PLAID_REDIRECT_URI=https://finance.jackson-alvarez.dev/plaid-oauth
+PLAID_WEBHOOK_URL=https://finance.jackson-alvarez.dev/api/integrations/plaid/webhook
+```
+
+The live site is `https://finance.jackson-alvarez.dev`.
+
+`PLAID_ENV=production` is the spelling. `prduction` or `prod` will leave Plaid unconfigured.
+
+In the Plaid dashboard, add `https://finance.jackson-alvarez.dev/plaid-oauth` as an **allowed redirect URI**. It has to match `PLAID_REDIRECT_URI` exactly, including `https`. Google’s production redirect is `https://finance.jackson-alvarez.dev/api/auth/callback/google`. `NEXTAUTH_URL` should be `https://finance.jackson-alvarez.dev`.
+
+The trial is free for up to 10 real connections. Deleting a connection does not give the slot back.
+
+Sandbox is only for a fake bank. Set `PLAID_ENV=sandbox` and use the Sandbox secret if you want that. Search **First Platypus Bank** and sign in with `user_good` / `pass_good`. Sandbox cannot see your real accounts.
+
+If Link opens and then your bank bounces back to a Plaid error about the redirect URI, the dashboard allowlist and `PLAID_REDIRECT_URI` do not match.
+
+`NEXTAUTH_SECRET` must already be set (it is, if Google sign-in works). The app uses it to encrypt the bank token. Do not rotate that secret after you connect a bank unless you are ready to disconnect and connect again.
+
+### 3. Where the values go
+
+Production, for the site you already have:
+
+1. Vercel → this project → **Settings** → **Environment Variables**.
+2. Add each name and value for the **Production** environment.
+3. Deploy again. Vercel does not pick up new variables until the next deployment.
+
+Local:
+
+```env
+OCR_PROVIDER=mistral
+MISTRAL_API_KEY=
+PLAID_CLIENT_ID=
+PLAID_SECRET=
+PLAID_ENV=production
+```
+
+Restart `npm run dev` after saving `.env.local`.
+
+Open Import. The pills should say **Mistral OCR** and **Plaid production**. If a pill says **Not configured**, the names above are missing, blank, or on the wrong Vercel environment. If you previously saved `PLAID_ENV=sandbox`, delete it or change it to `production` and redeploy.
+
+`OCR_ENABLED=false` or `PLAID_ENABLED=false` forces that pill off even when the key is present.
 
 ## Troubleshooting
 

@@ -17,6 +17,7 @@ const tabs: Tab[] = [
   { id: 'income', label: 'Income Sources', icon: '💰' },
   { id: 'expenses', label: 'Expenses', icon: '💸' },
   { id: 'savings', label: 'Savings', icon: '🏦' },
+  { id: 'import', label: 'Import', icon: '📥' },
 ];
 
 export default function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {

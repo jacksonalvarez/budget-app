@@ -3,7 +3,7 @@
 
 APP_DIR="/var/www/budget-app"
 REPO_URL="https://github.com/yourusername/budget-app.git"  # Replace with your repo
-DOMAIN="budget.yourdomain.com"  # Replace with your subdomain
+DOMAIN="finance.jackson-alvarez.dev"
 
 echo "🚀 Deploying Budget App..."
 
@@ -38,6 +38,14 @@ AWS_ACCESS_KEY_ID=your-aws-access-key-id
 AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
 AWS_REGION=us-east-1
 S3_BUCKET_NAME=your-bucket-name
+
+# Optional. Leave blank to keep document import and Plaid off.
+OCR_PROVIDER=mistral
+MISTRAL_API_KEY=
+GEMINI_API_KEY=
+PLAID_CLIENT_ID=
+PLAID_SECRET=
+PLAID_ENV=production
 EOF
 
 echo "❗ IMPORTANT: Edit .env.local with your actual credentials!"

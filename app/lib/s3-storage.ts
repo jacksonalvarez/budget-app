@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Transaction, IncomeSource, RecurringExpense, SavingsGoal, Category } from '../types';
 import { defaultCategories } from '../utils/categories';
 
@@ -120,6 +120,36 @@ export async function loadUserDataFromS3(userId: string): Promise<UserData | nul
     
     throw new Error(`S3 Error: ${error.message || 'Unknown S3 error'}`);
   }
+}
+
+export async function readJson<T>(key: string): Promise<T | null> {
+  try {
+    const response = await s3Client.send(new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    }));
+    if (!response.Body) return null;
+    return JSON.parse(await response.Body.transformToString()) as T;
+  } catch (error: any) {
+    if (error?.name === 'NoSuchKey') return null;
+    throw error;
+  }
+}
+
+export async function writeJson(key: string, value: unknown): Promise<void> {
+  await s3Client.send(new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    Body: JSON.stringify(value),
+    ContentType: 'application/json',
+  }));
+}
+
+export async function deleteJson(key: string): Promise<void> {
+  await s3Client.send(new DeleteObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  }));
 }
 
 // Initialize default user data if none exists
